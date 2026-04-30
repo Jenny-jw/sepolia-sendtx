@@ -36,7 +36,7 @@ Put your private key in `.env` and ensure `.env` is in .gitignore.
 - Reads PRIVATE_KEY and RPC_URL from `.env`
 - Prints the account address and balance
 - Sends a small amount of ETH to the configured recipient address
-- Waits for the transaction to be mined and prints the receipt (transactionHash, status, blockNumber, gasUsed, etc.)
+- Waits for the transaction to be mined and prints the receipt (status, blockNumber, gasUsed, etc.)
 
 ## Behavior & implementation notes
 
@@ -49,8 +49,9 @@ Put your private key in `.env` and ensure `.env` is in .gitignore.
 
 - insufficient funds: account balance too low — get test ETH from a faucet.
 - invalid nonce: there may be pending transactions; use
-  `     provider.getTransactionCount(address, 'pending')
-  `
+  ```bash
+  provider.getTransactionCount(address, 'pending')
+  ```
   to check the pending nonce.
 - RPC connection errors: verify RPC_URL, project ID, and any provider quotas or IP restrictions.
 
