@@ -60,7 +60,3 @@ Put your private key in `.env` and ensure `.env` is in .gitignore.
 - Sending ERC‑20 tokens: use a minimal ERC‑20 ABI (transfer) and call `tokenContract.transfer(to, amount)`.
 - Programmatic nonce handling: handle pending transactions and retries with custom nonce logic.
 - Use a hardware wallet, a signer provider, or other secure signing methods in production instead of raw private keys.
-
-## License
-
-MIT
