@@ -1,0 +1,65 @@
+# Sepolia send transaction
+
+Send a transaction and read the receipt on the Sepolia testnet using Node.js + ethers.js (private key-based).
+
+### Important security reminders
+
+Use only testnet private keys and test ETH for this demo; never store real/mainnet private keys or large funds in this repo.
+Put your private key in `.env` and ensure `.env` is in .gitignore.
+
+## Requirements
+
+- Node.js 16+ and npm
+- Sepolia RPC endpoint (Infura / Alchemy / QuickNode / other)
+- A Sepolia test account with test ETH
+
+## Setup
+
+1. Clone the project and install dependencies:
+   ```bash
+   npm install
+   ```
+2. Create a .env file in the project root:
+
+   ```bash
+   PRIVATE_KEY=0xYOUR_PRIVATE_KEY
+   RPC_URL=https://sepolia.infura.io/v3/YOUR_INFURA_PROJECT_ID
+   ```
+
+3. Run the example script:
+   `bash
+ node sendTx.js
+`
+
+### What the script does?
+
+- Reads PRIVATE_KEY and RPC_URL from `.env`
+- Prints the account address and balance
+- Sends a small amount of ETH to the configured recipient address
+- Waits for the transaction to be mined and prints the receipt (transactionHash, status, blockNumber, gasUsed, etc.)
+
+## Behavior & implementation notes
+
+- The script uses ethers.js and a JsonRpcProvider to connect to Sepolia.
+- It prefers EIP-1559 fields (maxPriorityFeePerGas / maxFeePerGas) when supported by the provider; it can fall back to `gasPrice` if necessary.
+- The script attempts to estimate gas and adds a small buffer to the gas limit to avoid out-of-gas errors.
+- Calling `wallet.sendTransaction(tx)` returns a TransactionResponse; calling `.wait()` on that response returns the Receipt containing final status and gas usage.
+
+## Common errors & troubleshooting
+
+- insufficient funds: account balance too low — get test ETH from a faucet.
+- invalid nonce: there may be pending transactions; use
+  `     provider.getTransactionCount(address, 'pending')
+  `
+  to check the pending nonce.
+- RPC connection errors: verify RPC_URL, project ID, and any provider quotas or IP restrictions.
+
+## Advanced ideas
+
+- Sending ERC‑20 tokens: use a minimal ERC‑20 ABI (transfer) and call `tokenContract.transfer(to, amount)`.
+- Programmatic nonce handling: handle pending transactions and retries with custom nonce logic.
+- Use a hardware wallet, a signer provider, or other secure signing methods in production instead of raw private keys.
+
+## License
+
+MIT
