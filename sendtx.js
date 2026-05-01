@@ -3,6 +3,17 @@ import { ethers } from "ethers";
 
 dotenv.config();
 
+const safeMsg = (err) => {
+  try {
+    if (!err) return "Unknown error";
+    if (typeof err === "string") return err;
+    if (err instanceof Error) return err.message;
+    return err.message ?? err.reason ?? JSON.stringify(err);
+  } catch (e) {
+    return String(err);
+  }
+};
+
 const main = async () => {
   const rpcURL = process.env.RPC_URL;
   const privateKey = process.env.PRIVATE_KEY;
@@ -18,15 +29,15 @@ const main = async () => {
   const address = await wallet.getAddress();
   console.log("Using address: ", address);
 
-  const balance = await provider.getBalance(address);
+  const balance = await provider.getBalance(address); // BigNumber, in wei
   console.log("Balance (wei)", balance.toString());
-  console.log("Balance (ETH)", ethers.formatEther(balance));
+  console.log("Balance (ETH)", ethers.formatEther(balance)); // Converts Wei to ETH
 
   const recipient = "0xB7a2c53A544a7b5253498E3A5CCf5888df57C147";
-  const vauleInEther = "0.001";
-  const value = ethers.parseEther(vauleInEther);
+  const valueInEther = "0.001";
+  const value = ethers.parseEther(valueInEther);
 
-  const nonce = await provider.getTransactionCount(address);
+  const nonce = await provider.getTransactionCount(address); // Returns a Promise that resovles to the number of transactions this account has ever sent (also called the nonce) at the blockTag
   console.log("nonce: ", nonce);
 
   const feeData = await provider.getFeeData();
@@ -61,7 +72,7 @@ const main = async () => {
   } catch (error) {
     console.warn(
       "Gas estimation failed, continuing without gasLimit. Error:",
-      error.message,
+      safeMsg(error),
     );
   }
 
@@ -70,7 +81,7 @@ const main = async () => {
   console.log("Transaction hash:", sent.hash);
   console.log("Sent: ", sent);
 
-  const receipt = await sent.wait(1);
+  const receipt = await sent.wait(1); // wait for 1 confirmation
   console.log("Transaction mined:");
   console.log({
     status: receipt.status,
@@ -81,14 +92,33 @@ const main = async () => {
   });
   console.log("Receipt: ", receipt);
 
-  const block = await provider.getBlock(receipt.blockNumber);
-  const baseFeePerGas = BigInt(block.baseFeePerGas); // BigInt or ethers.BigInt-like
-  //   const effectiveGasPrice = BigInt(receipt.effectiveGasPrice);
-  //   const actualPriorityFee = effectiveGasPrice - baseFeePerGas;
-  console.log("block: ", block);
-  console.log("baseFeePerGas: ", baseFeePerGas);
-  //   console.log("effectiveGasPrice: ", effectiveGasPrice);
-  //   console.log("actualPriorityFee: ", actualPriorityFee);
+  const explicitReceipt = await provider.getTransactionReceipt(sent.hash);
+  console.log(
+    "Explicit getTransactionReceipt:",
+    explicitReceipt
+      ? {
+          status: explicitReceipt.status,
+          blockNumber: explicitReceipt.blockNumber,
+        }
+      : null,
+  );
+
+  if (receipt.blockNumber != null) {
+    const block = await provider.getBlock(receipt.blockNumber);
+    const baseFeePerGas = block?.baseFeePerGas
+      ? BigInt(block.baseFeePerGas.toString())
+      : null;
+    console.log(
+      "block baseFeePerGas:",
+      baseFeePerGas?.toString() ?? "N/A (pre-EIP1559 or unavailable)",
+    );
+    // compute actual priority fee if available
+    if (receipt.effectiveGasPrice != null && baseFeePerGas != null) {
+      const eff = BigInt(receipt.effectiveGasPrice.toString());
+      const actualPriorityFee = eff - baseFeePerGas;
+      console.log("actualPriorityFee (wei):", actualPriorityFee.toString());
+    }
+  }
 };
 
 main().catch((err) => {
